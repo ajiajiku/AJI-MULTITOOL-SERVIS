@@ -15,9 +15,11 @@ class Partition:
 
 _HEX = re.compile(r"0x[0-9a-fA-F]+")
 
+
 def _value(text: str, key: str) -> str | None:
     m = re.search(rf"^\s*{re.escape(key)}\s*:\s*(.*?)\s*$", text, re.M)
     return m.group(1).strip().strip('"') if m else None
+
 
 def _num(value: str | None) -> int | None:
     if not value or value.lower() in {"-", "none", "null"}:
@@ -28,10 +30,21 @@ def _num(value: str | None) -> int | None:
         m = _HEX.search(value)
         return int(m.group(0), 16) if m else None
 
+
 def parse_scatter(path: str | Path) -> list[Partition]:
+    """Parse standard MediaTek scatter files and common dashless variants."""
     path = Path(path)
-    text = path.read_text(encoding="utf-8", errors="replace")
-    blocks = re.split(r"\n\s*partition_index\s*:", text, flags=re.I)
+    text = path.read_text(encoding="utf-8-sig", errors="replace")
+
+    # Standard MTK scatter syntax uses YAML-like blocks:
+    #   - partition_index: SYS0
+    # Older/custom files may omit the leading dash.
+    blocks = re.split(
+        r"^\s*-?\s*partition_index\s*:\s*[^\r\n]*\r?$",
+        text,
+        flags=re.I | re.M,
+    )
+
     out: list[Partition] = []
     for block in blocks[1:]:
         name = _value(block, "partition_name") or "unknown"
@@ -46,6 +59,7 @@ def parse_scatter(path: str | Path) -> list[Partition]:
             operation=_value(block, "operation_type") or "",
         ))
     return out
+
 
 def firmware_path(scatter: str | Path, file_name: str) -> Path:
     return Path(scatter).resolve().parent / file_name
