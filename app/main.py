@@ -9,6 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.scatter_parser import parse_scatter, firmware_path
 
+# SP Flash Tool yang diletakkan di dalam repository.
+BUNDLED_SPFT = ROOT / "SP_Flash_Tool_v5"
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -16,9 +19,10 @@ class App(tk.Tk):
         self.geometry("1050x650")
         self.minsize(900, 560)
         self.scatter = tk.StringVar()
-        self.spft = tk.StringVar()
+        self.spft = tk.StringVar(value=str(BUNDLED_SPFT) if BUNDLED_SPFT.is_dir() else "")
         self.status = tk.StringVar(value="Siap. Mode aman: belum ada operasi write ke perangkat.")
         self._build()
+        self._check_spft()
 
     def _build(self):
         top = ttk.Frame(self, padding=12); top.pack(fill="x")
@@ -45,13 +49,20 @@ class App(tk.Tk):
         self.tree.pack(fill="both",expand=True,padx=12,pady=8)
         ttk.Label(self,textvariable=self.status,relief="sunken",anchor="w").pack(fill="x",side="bottom")
 
+    def _check_spft(self):
+        exe = Path(self.spft.get()) / "flash_tool.exe" if self.spft.get() else None
+        if exe and exe.exists():
+            self.status.set("SP Flash Tool v5 ditemukan di dalam repository.")
+        else:
+            self.status.set("SP Flash Tool v5 belum ditemukan di repository. Pilih folder secara manual.")
+
     def choose_scatter(self):
         p=filedialog.askopenfilename(title="Pilih scatter",filetypes=[("Scatter","*.txt"),("Semua","*.*")])
         if p: self.scatter.set(p); self.load_scatter()
 
     def choose_spft(self):
         p=filedialog.askdirectory(title="Folder SP Flash Tool v5")
-        if p: self.spft.set(p)
+        if p: self.spft.set(p); self._check_spft()
 
     def load_scatter(self):
         if not self.scatter.get(): return
@@ -79,8 +90,12 @@ class App(tk.Tk):
         folder=Path(self.spft.get())
         exe=folder/"flash_tool.exe"
         if not exe.exists():
-            return messagebox.showerror("SP Flash Tool","flash_tool.exe tidak ditemukan.")
-        subprocess.Popen([str(exe)],cwd=str(folder)); self.status.set("SP Flash Tool v5 dijalankan.")
+            return messagebox.showerror("SP Flash Tool","flash_tool.exe tidak ditemukan.\n\nLokasi yang dicari:\n" + str(exe))
+        try:
+            subprocess.Popen([str(exe)],cwd=str(folder))
+            self.status.set("SP Flash Tool v5 dijalankan dari repository.")
+        except Exception as e:
+            messagebox.showerror("SP Flash Tool",f"Gagal menjalankan SP Flash Tool:\n{e}")
 
 if __name__ == "__main__":
     App().mainloop()
