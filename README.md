@@ -1,44 +1,51 @@
 # AJI MULTITOOL SERVIS
 
-Proyek pengembangan tool servis Android/MediaTek dengan baseline analisis paket MTK GSM LABORATORY yang sudah diberikan dalam proyek ini.
+Tool servis MediaTek untuk Windows. Baseline kompatibilitas menggunakan **SP Flash Tool v5 yang telah diuji pengguna**, sementara GUI, scatter parser, dry-run planner, dan integrasi launcher dikembangkan di repository ini.
 
-## Prinsip proyek
+## Status sekarang
 
-- Nama proyek: **AJI MULTITOOL SERVIS**.
-- Fungsi inti yang menjadi target: deteksi MediaTek BROM, identifikasi perangkat, komunikasi DA, pembacaan storage/GPT, parsing scatter, serta operasi flash/servis.
-- GUI dikembangkan bertahap dengan mempertahankan alur kerja referensi.
-- Lapisan transport USB/UART dipisahkan agar dapat diuji dan dikembangkan tanpa mengubah logika perangkat.
-- Binary/vendor dari paket referensi tidak disalin ke repository publik tanpa dasar distribusi yang sesuai.
+**Fase 2 — aplikasi uji sudah siap.**
 
-## Baseline yang dipetakan
+Fitur:
+- GUI AJI MULTITOOL SERVIS berbasis Python/Tkinter.
+- Pemilihan dan parsing scatter MediaTek.
+- Daftar partisi, alamat, ukuran, region, dan operation.
+- Dry-run untuk memeriksa file firmware tanpa menulis perangkat.
+- Tombol menjalankan `flash_tool.exe` dari paket SP Flash Tool v5 lokal.
+- Test parser otomatis.
 
-Paket referensi yang tersedia berisi executable utama, runtime Python, PySide6, pyserial/pyusb, dan modul MTKClient. Struktur yang teridentifikasi mencakup GUI, library BROM/DA, konfigurasi chipset, loader/preloader, serta library GPT/partition.
+Riset menunjukkan pendekatan open-source seperti MTKClient mendukung BROM, DA, GPT, pembacaan/penulisan flash, sedangkan implementasi kompatibilitas scatter dapat dibangun terpisah dari binary SP Flash Tool. citeturn0search7turn0search2
 
-Inventaris source lengkap yang berhasil dipetakan dari paket lokal dicatat di `docs/GSM_SOURCE_INVENTORY.md`.
+## Uji coba Windows
 
-## Target arsitektur
+1. Clone/download repository ini.
+2. Ekstrak paket SP Flash Tool v5 Anda ke folder lokal, misalnya:
+   `C:\AJI-MULTITOOL-SERVIS\SP_Flash_Tool_v5\`
+3. Pastikan terdapat `flash_tool.exe` di folder tersebut.
+4. Jalankan `run.bat`.
+5. Pilih folder SP Flash Tool v5.
+6. Pilih scatter firmware.
+7. Tekan **Baca Scatter**.
+8. Tekan **Dry-Run Flash Plan** untuk pemeriksaan tanpa hardware write.
+9. Jika ingin membuka tool flashing yang sudah terbukti bekerja, tekan **Jalankan SP Flash Tool**.
+
+**Penting:** repository belum mengaktifkan write langsung dari engine AJI. Tahap ini sengaja dibuat aman untuk memvalidasi GUI, parser, firmware mapping, dan integrasi dengan SP Flash Tool yang sudah Anda uji.
+
+## Struktur
 
 ```text
-AJI MULTITOOL SERVIS
-├── app/                 # aplikasi utama dan GUI
-├── mtk/                 # lapisan komunikasi MediaTek
-│   ├── brom/            # deteksi/handshake/identifikasi
-│   ├── da/              # komunikasi Download Agent
-│   ├── gpt/             # pembacaan dan parsing GPT
-│   └── flash/           # operasi flash berbasis scatter
-├── transport/           # abstraksi USB/UART
-├── firmware/            # parser dan metadata firmware
-├── ui/                  # resource dan desain antarmuka
-├── tests/               # pengujian tanpa perangkat terlebih dahulu
-└── docs/                # dokumentasi dan catatan teknis
+app/main.py              GUI utama
+tools/scatter_parser.py  parser scatter
+tests/                   pengujian
+mtk/                     backend MTK yang sedang dikembangkan
+docs/                    dokumentasi integrasi
+run.bat                  launcher Windows
 ```
 
-## Referensi MT6765
+## Referensi SP Flash Tool
 
-Log pengujian tersimpan menunjukkan `MT6765`, Helio P35/G35 `[0766]`, Sub Code `8A00`, BROM HW `CA00`, dan storage `HBG4a2`. Urutan yang berhasil pada baseline meliputi deteksi BROM, pembacaan security state, DA Stage 1/2/Extended, pembacaan RAM/storage, pemeriksaan/perbaikan GPT, dan penulisan partisi firmware. fileciteturn221file0L15-L39
+Paket yang Anda upload berisi `flash_tool.exe`, beberapa `DA_*.bin`, `MTK_AllInOne_DA.bin`, `FlashToolLib*.dll`, dan komponen Qt. Binary tersebut **tidak disalin ke repository publik**. Gunakan paket SP Flash Tool yang Anda miliki secara lokal.
 
-## Status
+## Catatan keselamatan
 
-**Fase 1 — source inventory selesai.**
-
-Langkah aktif berikutnya: mengambil modul komunikasi dan parser yang diperlukan dari baseline lokal, kemudian mengintegrasikannya ke struktur Aji Multitool Servis secara bertahap dan dapat diuji.
+Jangan melakukan flash dengan firmware yang salah. Khususnya jangan menghapus/menulis NVRAM, NVDATA, atau partisi identitas tanpa backup dan verifikasi perangkat. Tahap berikutnya adalah menghubungkan backend MTK open-source secara bertahap setelah pengujian GUI ini berhasil.
